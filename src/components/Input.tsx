@@ -1,21 +1,21 @@
-interface MessageData {
-  id: number;
-  role: string;
-  content: string;
-}
+import { useState } from 'react'
 
 interface UserInputProps {
-  createMessage: (messageContent: string) => void;
+  submitMessage: (messageContent: string) => void;
 }
 
-const Input: React.FC<UserInputProps> = ({ createMessage }) => {
+const Input: React.FC<UserInputProps> = ({ submitMessage }) => {
+
+  const [input, setInput] = useState('')
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(event.currentTarget.value)
+  }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const userInput: HTMLInputElement | null = document.querySelector('#user-input') as HTMLInputElement
-
-    createMessage(userInput.value)
-    userInput.value = ''
+    submitMessage(input)
+    setInput('')
   }
 
   return (
@@ -30,6 +30,8 @@ const Input: React.FC<UserInputProps> = ({ createMessage }) => {
             minLength={1}
             maxLength={500}
             size={12}
+            value={input}
+            onChange={handleChange}
             required
           >
           </input>

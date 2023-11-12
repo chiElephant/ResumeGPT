@@ -1,84 +1,75 @@
-"use client"
-import { useState } from 'react';
+'use client'
 import Chat from '../components/Chat';
 import Input from '../components/Input';
 import OpenAI from 'openai';
+import Assistant from '../components/Assistant'
+import Thread from '../components/Thread'
+import Messages from '../components/Messages'
 
-const Home: React.FC = () => {
-  const openai = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY, dangerouslyAllowBrowser: true })
+interface MessageItem {
+  id: number,
+  role: string,
+  content: string
+}
 
-  const [threadId, setThreadId] = useState('');
-  const [thread, setThread] = useState([])
-  const [assistantId, setAssistantId] = useState('')
+interface HomeProps {
+  assistantIds: string[] | null,
+  threadIds: string[] | null,
+  currentThread: MessageItem[] | null
+}
 
-  const createAssistant = async () => {
-    const assistant = await openai.beta.assistants.create({
-      name: "Resume Analyzer",
-      description: "You are a software engineering resume bullet point analyzer. Write and run code to optimize the given bullet point.",
-      // tools: [{ type: "code_interpreter" }],
-      model: "gpt-3.5-turbo-1106"
-    })
-    setAssistantId(assistant.id)
+const openai = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY, dangerouslyAllowBrowser: true })
+let assistant: Assistant | undefined;
+let thread: Thread | undefined;
+let messages: Messages | undefined;
+
+const Home: React.FC<HomeProps> = ({ assistantIds, threadIds, currentThread }) => {
+
+  const init = async () => {
+    if (!assistantIds) {
+      assistant = new Assistant(openai)
+      assistant.createAssistant()
+      assistantIds = [ assistant.id ]
+    }
+    // else retrieve the current assistant
+      // assign assitant
+
+    if (!threadIds) {
+      thread = new Thread(openai)
+      thread.createThread()
+      threadIds = [ thread.id ]
+    }
+    // else retrieve the threads
+      // assign thread
+
+    if (!currentThread) {
+      messages = new Messages(openai)
+      currentThread = []
+    }
+
   }
 
-  const createThread = async() => {
-    const newThread = await openai.beta.threads.create()
-    setThreadId(newThread.id)
-  }
+  init()
 
-  const retrieveThread = async () => {
-    const myThread = await openai.beta.threads.retrieve(threadId)
-    return myThread
-  }
+  const handleConversation = async (message: string) => {
 
-  const getMessages = async() => {
-    const messagesData = await openai.beta.threads.messages.list(threadId, {order: 'asc'})
-    const messagesList = messagesData.body.data
-
-    const messages = messagesList.map(message => {
-      return {id: message.id, content: message.content[0].text.value, role: message.role}
-    })
-    setThread(messages)
-  }
-
-  const runAssistant = async() => {
-    const newRun = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: assistantId
-      // instructions: ''
-    })
-
-    let runCompleted = false
-
-    while(!runCompleted) {
-      const run = await openai.beta.threads.runs.retrieve(threadId, newRun.id)
-      if (run.status === 'completed') {
-        runCompleted = true
+    if (messages && thread) {
+      try {
+        const newMessage = await messages.createMessage(thread.id, message)
+        console.log(newMessage)
+      } catch (error) {
+        console.error(error)
+        alert(`Error adding message: ${error}`)
       }
     }
-    getMessages()
-  }
-
-  const createMessage = async(messageContent: string) => {
-    const message = await openai.beta.threads.messages.create(threadId, {
-      role: 'user',
-      content: messageContent
-    })
-    getMessages()
-    runAssistant()
-  }
-
-
-  if (!threadId) {
-    createAssistant()
-    createThread()
   }
 
   return (
     <main>
       <div>
-        <Chat thread={thread} />
+        <Chat thread={currentThread} />
         <hr />
-        <Input createMessage={createMessage}/>
+        <Input submitMessage={handleConversation}/>
       </div>
     </main>
   );

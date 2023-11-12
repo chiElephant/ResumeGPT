@@ -7,13 +7,13 @@ interface MessageItem {
 }
 
 interface ChatProps {
-  thread: MessageItem[];
+  thread: MessageItem[] | null;
 }
 
 const Chat: React.FC<ChatProps> = ({ thread }) => (
   <div id='chat-window'>
     <ol>
-      {thread.map(message => (
+      {thread?.map(message => (
         <Message key={message.id} message={message} />
       ))}
     </ol>
