@@ -33,8 +33,7 @@ const Input: React.FC<UserInputProps> = ({ submitMessage }) => {
             value={input}
             onChange={handleChange}
             required
-          >
-          </input>
+          />
         </div>
         <button id='form-submit' type='submit'>Submit</button>
       </form>

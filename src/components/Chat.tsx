@@ -1,13 +1,19 @@
 import Message from './Message';
 
-interface MessageItem {
-  id: number;
-  role: string;
-  content: string;
+interface Content {
+  text: {
+    value: string
+  }
+}
+
+interface ThreadMessage {
+  id: number,
+  role: string,
+  content: Content[]
 }
 
 interface ChatProps {
-  thread: MessageItem[] | null;
+  thread: ThreadMessage[];
 }
 
 const Chat: React.FC<ChatProps> = ({ thread }) => (

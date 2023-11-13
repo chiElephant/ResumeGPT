@@ -12,27 +12,39 @@ interface Message {
   content: Content[]
 }
 
-export default class Messages {
-  messages: string[]
+export default class MessagesAPI {
+  messages: Message[] | []
+  threadId: string
+  assistantId: string
   openai: OpenAI
   constructor(openAi: OpenAI) {
     this.messages = []
+    this.threadId = ''
+    this.assistantId = ''
     this.openai = openAi
   }
 
   async getMessages(threadId: string) {
-    // const messagesData = await this.openai.beta.threads.messages.list(threadId, {order: 'asc'})
-    const messagesData = await this.openai.beta.threads.messages.list(threadId, { order: 'asc' }) as OpenAI.Beta.Threads.Messages.ThreadMessagesPage;
-    // const messagesList = messagesData.body.data
-    console.log(messagesData)
+    try {
+      const messagesData = await this.openai.beta.threads.messages.list(threadId, { order: 'asc' }) as OpenAI.Beta.Threads.Messages.ThreadMessagesPage;
 
-    // const messages = messagesList.map((message: Message) => {
-    //   return {id: message.id, content: message.content[0].text.value, role: message.role}
-    // })
-    // return messages
+      const messagesList = messagesData.data
+
+      console.log('getMessages: ', {messagesData})
+
+      // const messages: Message[] = messagesList.map((message: Message) => {
+      //   return {id: message.id, content: message.content[0].text.value, role: message.role}
+      // })
+
+      // this.messages = messages
+      return this.messages
+
+    } catch(error) {
+      throw error
+    }
   }
 
-  async createMessage(threadId: string,  messageContent: string)  {
+  async createMessage(threadId: string,  messageContent: string) {
     try {
       const message = await this.openai.beta.threads.messages.create(threadId, {
         role: 'user',
@@ -42,21 +54,19 @@ export default class Messages {
       return message
 
     } catch (err) {
-      if (err instanceof OpenAI.APIError) {
-        console.error(err); // Handle OpenAI API error (e.g., 400)
-        throw err
-      } else {
-        console.error(err)
-        throw err; // Re-throw other errors
-      }
+      throw err
     }
   }
 
-  async updateMessages() {
+  async updateMessages(messagesList: Message[]) {
+    const messages: Message[] = messagesList.map((message: Message) => {
+      const contentValue: Content[] = message.content.map(content => ({
+        text: { value: content.text.value }
+      }));
+      return { id: message.id, content: contentValue, role: message.role };
+    });
 
-  }
-
-  async deleteMessages() {
-
+    this.messages = messages;
   }
 }
+
