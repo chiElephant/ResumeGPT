@@ -17,7 +17,6 @@ export default class ThreadAPI {
       this.thread = newThread
       return this
     } catch(error) {
-      console.error(error)
       throw error
     }
   }

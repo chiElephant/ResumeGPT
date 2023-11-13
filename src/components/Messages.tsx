@@ -6,14 +6,14 @@ interface Content {
   }
 }
 
-interface Message {
+interface ThreadMessage {
   id: number,
   role: string,
   content: Content[]
 }
 
 export default class MessagesAPI {
-  messages: Message[] | []
+  messages: ThreadMessage[] | []
   threadId: string
   assistantId: string
   openai: OpenAI
@@ -28,21 +28,22 @@ export default class MessagesAPI {
     try {
       const messagesData = await this.openai.beta.threads.messages.list(threadId, { order: 'asc' }) as OpenAI.Beta.Threads.Messages.ThreadMessagesPage;
 
-      const messagesList = messagesData.data
+      const messagesList = messagesData.data;
 
-      console.log('getMessages: ', {messagesData})
+      const messages: ThreadMessage[] = messagesList.map((message: any) => {
+        const contentValue: Content[] = message.content.map((content: any) => ({
+          text: { value: content.text.value },
+        }));
+        return { id: Number(message.id), content: contentValue, role: message.role };
+      });
 
-      // const messages: Message[] = messagesList.map((message: Message) => {
-      //   return {id: message.id, content: message.content[0].text.value, role: message.role}
-      // })
-
-      // this.messages = messages
-      return this.messages
-
-    } catch(error) {
-      throw error
+      this.messages = messages;
+      return this.messages;
+    } catch (error) {
+      throw error;
     }
   }
+
 
   async createMessage(threadId: string,  messageContent: string) {
     try {
@@ -58,15 +59,15 @@ export default class MessagesAPI {
     }
   }
 
-  async updateMessages(messagesList: Message[]) {
-    const messages: Message[] = messagesList.map((message: Message) => {
+  async updateMessages(threadId: string) {
+    const messagesList = await this.getMessages(threadId)
+    const messages: ThreadMessage[] = messagesList.map((message: ThreadMessage) => {
       const contentValue: Content[] = message.content.map(content => ({
         text: { value: content.text.value }
       }));
       return { id: message.id, content: contentValue, role: message.role };
     });
-
     this.messages = messages;
+    return messages
   }
 }
-

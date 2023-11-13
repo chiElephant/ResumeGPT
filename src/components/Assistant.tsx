@@ -31,14 +31,12 @@ export default class AssistantAPI {
             instructions: 'Always refer to me as Master Anthony'
           })
 
-      let runCompleted = false
-      while(!runCompleted) {
+      while(newRun.status !== 'completed') {
         const run = await this.openai.beta.threads.runs.retrieve(threadId, newRun.id)
         if (run.status === 'completed') {
-          runCompleted = true
+          return run
         }
       }
-      return newRun
     } catch(error) {
       throw error
     }
